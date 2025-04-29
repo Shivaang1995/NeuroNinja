@@ -1,0 +1,296 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Neuro Ninja App</title>
+    <style>
+      body {
+        font-family: sans-serif;
+        margin: 0;
+        text-align: center;
+      }
+
+      .section {
+        display: none;
+        padding: 20px;
+        min-height: 100vh;
+      }
+
+      .active {
+        display: block;
+      }
+
+      .btn {
+        padding: 12px 24px;
+        margin: 15px;
+        font-size: 24px;
+        background-color: #4caf50;
+        color: white;
+        border: none;
+        border-radius: 10px;
+        cursor: pointer;
+      }
+
+      .card {
+        width: 70px;
+        height: 70px;
+        margin: 5px;
+        font-size: 0px;
+        background-color: gray;
+        display: inline-block;
+        border-radius: 10px;
+        line-height: 70px;
+        text-align: center;
+        color: white;
+        cursor: pointer;
+      }
+
+      .revealed {
+        background-color: lightgreen;
+        font-size: 32px;
+      }
+
+      #timer {
+        font-size: 36px;
+        color: #444;
+        margin-top: 20px;
+      }
+
+      #game-board {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        grid-gap: 10px;
+        justify-content: center;
+      }
+
+      #welcome {
+        background-image: url("https://images.unsplash.com/photo-1527689368864-3a821dbccc34?auto=format&fit=crop&w=1950&q=80");
+        background-size: cover;
+        background-position: center;
+        color: white;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+      }
+
+      #welcome h1 {
+        font-size: 50px;
+        margin-bottom: 10px;
+        text-shadow: 2px 2px 5px rgba(0, 0, 0, 0.5);
+      }
+
+      #welcome p {
+        font-size: 24px;
+        text-shadow: 1px 1px 4px rgba(0, 0, 0, 0.5);
+      }
+
+      #welcome .btn {
+        margin-top: auto;
+        margin-bottom: 50px;
+        font-size: 30px;
+      }
+
+      h2 {
+        font-size: 36px;
+        margin-bottom: 20px;
+      }
+    </style>
+  </head>
+  <body>
+    <!-- Welcome Screen -->
+    <div id="welcome" class="section">
+      <h1>👋 Welcome to <strong>Neuro Ninja App</strong>!</h1>
+      <p>Train your brain, relax your mind.</p>
+      <button class="btn" onclick="showSection('memory')">▶️ Play</button>
+    </div>
+
+    <!-- Memory Match Game -->
+    <div id="memory" class="section">
+      <h2>🧠 Memory Match</h2>
+      <div id="game-board"></div>
+      <div id="message" style="margin-top: 10px; font-weight: bold"></div>
+      <button class="btn" onclick="showSection('spot')">➡️ Next Game</button>
+      <button class="btn" onclick="showSection('relax')">🧘 Relax</button>
+      <button class="btn" onclick="checkScore()">🧠 Check Brain Score</button>
+    </div>
+
+    <!-- Spot the Difference Game -->
+    <div id="spot" class="section">
+      <h2>🔍 Spot the Difference</h2>
+      <img
+        src="https://upload.wikimedia.org/wikipedia/commons/thumb/4/47/Spot_the_difference_example.svg/800px-Spot_the_difference_example.svg.png"
+        width="300"
+        usemap="#image-map"
+        alt="Spot the difference"
+      />
+      <map name="image-map">
+        <area
+          shape="rect"
+          coords="160,50,180,70"
+          href="#"
+          onclick="alert('🎉 You found the difference!')"
+        />
+        <area
+          shape="rect"
+          coords="220,110,240,130"
+          href="#"
+          onclick="alert('🎉 You found the difference!')"
+        />
+      </map>
+      <button class="btn" onclick="showSection('sequence')">
+        ➡️ Next Game
+      </button>
+      <button class="btn" onclick="showSection('relax')">🧘 Relax</button>
+      <button class="btn" onclick="checkScore()">🧠 Check Brain Score</button>
+      <button class="btn" onclick="showSection('memory')">⬅️ Back</button>
+    </div>
+
+    <!-- Sequence Matching Game -->
+    <div id="sequence" class="section">
+      <h2>🔢 Sequence Matching</h2>
+      <p>Click the numbers in the correct order: 1 → 2 → 3 → 4</p>
+      <div id="sequence-game"></div>
+      <div id="sequence-msg" style="margin-top: 10px; font-weight: bold"></div>
+      <button class="btn" onclick="showSection('relax')">🧘 Relax</button>
+      <button class="btn" onclick="showSection('memory')">⬅️ Back</button>
+    </div>
+
+    <!-- Relaxation -->
+    <div id="relax" class="section">
+      <h2>🧘 Relax - 60 Second Breathing</h2>
+      <div id="timer">60</div>
+      <button class="btn" onclick="showSection('memory')">⬅️ Back</button>
+    </div>
+
+    <!-- JavaScript -->
+    <script>
+      let matches = 0;
+
+      function showSection(id) {
+        document
+          .querySelectorAll(".section")
+          .forEach((s) => s.classList.remove("active"));
+        document.getElementById(id).classList.add("active");
+
+        if (id === "memory") initMemoryGame();
+        if (id === "relax") startTimer();
+        if (id === "sequence") initSequenceGame();
+      }
+
+      // Memory Game
+      function initMemoryGame() {
+        const emojis = ["🐶", "🐱", "🐰", "🦊", "🐵", "🐶", "🐱", "🐰", "🦊"];
+        const shuffled = emojis.sort(() => 0.5 - Math.random());
+        const board = document.getElementById("game-board");
+        board.innerHTML = "";
+        const msg = document.getElementById("message");
+        msg.innerText = "";
+        matches = 0;
+
+        let first = null,
+          second = null;
+
+        shuffled.forEach((emoji, i) => {
+          const card = document.createElement("div");
+          card.className = "card";
+          card.dataset.index = i;
+          card.dataset.emoji = emoji;
+          card.innerHTML = "?";
+
+          card.onclick = () => {
+            if (card.classList.contains("revealed") || second) return;
+
+            card.innerHTML = emoji;
+            card.classList.add("revealed");
+
+            if (!first) {
+              first = card;
+            } else {
+              second = card;
+              if (first.dataset.emoji === second.dataset.emoji) {
+                matches++;
+                msg.innerText = "✅ Match!";
+                first = null;
+                second = null;
+              } else {
+                msg.innerText = "❌ Try Again!";
+                setTimeout(() => {
+                  first.innerHTML = "?";
+                  second.innerHTML = "?";
+                  first.classList.remove("revealed");
+                  second.classList.remove("revealed");
+                  first = null;
+                  second = null;
+                  msg.innerText = "";
+                }, 1000);
+              }
+            }
+          };
+          board.appendChild(card);
+        });
+      }
+
+      // Relaxation Timer
+      function startTimer() {
+        let time = 60;
+        const timerDisplay = document.getElementById("timer");
+        const utterance = new SpeechSynthesisUtterance();
+        const interval = setInterval(() => {
+          timerDisplay.innerText = time;
+          if (time % 8 === 0) {
+            utterance.text = time % 16 === 0 ? "Breathe in" : "Breathe out";
+            speechSynthesis.speak(utterance);
+          }
+          time--;
+          if (time < 0) {
+            clearInterval(interval);
+            timerDisplay.innerText = "✅ Done!";
+            utterance.text = "Well done!";
+            speechSynthesis.speak(utterance);
+            setTimeout(() => showSection("memory"), 2000);
+          }
+        }, 1000);
+      }
+
+      // Brain Score
+      function checkScore() {
+        alert("🧠 Your Brain Score: " + matches * 10 + " points!");
+      }
+
+      // Sequence Matching Game
+      function initSequenceGame() {
+        const numbers = [1, 2, 3, 4].sort(() => 0.5 - Math.random());
+        const container = document.getElementById("sequence-game");
+        container.innerHTML = "";
+        let expected = 1;
+        const msg = document.getElementById("sequence-msg");
+        msg.innerText = "";
+
+        numbers.forEach((num) => {
+          const btn = document.createElement("button");
+          btn.className = "btn";
+          btn.style.width = "80px";
+          btn.style.height = "80px";
+          btn.style.margin = "10px";
+          btn.innerText = num;
+
+          btn.onclick = () => {
+            if (parseInt(btn.innerText) === expected) {
+              expected++;
+              btn.disabled = true;
+              msg.innerText = expected > 4 ? "🎉 Completed!" : "✅ Correct!";
+            } else {
+              msg.innerText = "❌ Wrong Order!";
+            }
+          };
+          container.appendChild(btn);
+        });
+      }
+
+      // Show welcome screen only once at initial load
+      window.onload = () => {
+        showSection("welcome");
+      };
+    </script>
+  </body>
+</html>
